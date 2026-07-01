@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { Product } from '../types';
 
 export const CATEGORIES = [
@@ -12,7 +7,9 @@ export const CATEGORIES = [
   'Appetizers',
   'Street Food',
   'Premium Paneer'
-];
+] as const;
+
+export type Category = typeof CATEGORIES[number];
 
 export const PRODUCTS: Product[] = [
   {

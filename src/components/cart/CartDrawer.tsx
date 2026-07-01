@@ -1,12 +1,16 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Trash2, Tag, Plus, Minus, MapPin, Sparkles, AlertCircle, ShoppingCart, Percent } from 'lucide-react';
-import { CartItem } from '../types';
+import { X, Trash2, Tag, Plus, Minus, MapPin, Sparkles, CircleAlert as AlertCircle, ShoppingCart, Percent } from 'lucide-react';
+import { CartItem, SpicyLevel } from '../../types';
+import { formatPrice, calculateItemPrice, getSpicyLevelColor } from '../../utils/helpers';
+import {
+  calculateDeliveryFee,
+  calculateGST,
+  calculateDiscount,
+  calculateGrandTotal,
+  PROMO_CODE,
+  FREE_DELIVERY_THRESHOLD
+} from '../../utils/helpers';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -20,7 +24,7 @@ interface CartDrawerProps {
   onCheckout: (appliedDiscount: number, promoCode: string) => void;
 }
 
-export default function CartDrawer({
+export function CartDrawer({
   isOpen,
   onClose,
   cartItems,
@@ -37,33 +41,22 @@ export default function CartDrawer({
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [addressInput, setAddressInput] = useState(deliveryAddress);
 
-  // Subtotal calculation (item price * item quantity)
-  const subtotal = cartItems.reduce((acc, item) => {
-    let price = item.product.price;
-    if (item.selectedOption) {
-      price += item.selectedOption.price;
-    }
-    price += item.selectedToppings.length * 50;
-    return acc + price * item.quantity;
-  }, 0);
+  const subtotal = cartItems.reduce((acc, item) => acc + calculateItemPrice(item) * item.quantity, 0);
 
-  // Promo code validation: "FOODEAL" gives 15% discount
   const handleApplyPromo = () => {
     setPromoError(null);
-    if (promoInput.trim().toUpperCase() === 'FOODEAL') {
-      setAppliedPromo('FOODEAL');
+    if (promoInput.trim().toUpperCase() === PROMO_CODE) {
+      setAppliedPromo(PROMO_CODE);
       setPromoInput('');
     } else {
-      setPromoError('Invalid coupon. Try "FOODEAL" for 15% off!');
+      setPromoError(`Invalid coupon. Try "${PROMO_CODE}" for 15% off!`);
     }
   };
 
-  const discountAmount = appliedPromo === 'FOODEAL' ? Math.round(subtotal * 0.15) : 0;
-  
-  // Free delivery threshold: Free for order > ₹500
-  const deliveryFee = subtotal > 500 || subtotal === 0 ? 0 : 40;
-  const gstTax = Math.round(subtotal * 0.05); // 5% standard GST
-  const grandTotal = subtotal - discountAmount + deliveryFee + gstTax;
+  const discountAmount = calculateDiscount(subtotal, appliedPromo !== null);
+  const deliveryFee = calculateDeliveryFee(subtotal);
+  const gstTax = calculateGST(subtotal);
+  const grandTotal = calculateGrandTotal(subtotal, discountAmount, deliveryFee, gstTax);
 
   const handleSaveAddress = () => {
     if (addressInput.trim()) {
@@ -81,8 +74,6 @@ export default function CartDrawer({
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 overflow-hidden">
-          
-          {/* Backdrop Blur overlay */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -91,7 +82,6 @@ export default function CartDrawer({
             className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs"
           />
 
-          {/* Drawer Body container */}
           <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
             <motion.div
               initial={{ x: '100%' }}
@@ -100,8 +90,6 @@ export default function CartDrawer({
               transition={{ type: 'tween', duration: 0.35, ease: 'easeInOut' }}
               className="w-screen max-w-md bg-white flex flex-col h-full shadow-2xl border-l border-orange-100"
             >
-              
-              {/* Header section */}
               <div className="p-6 border-b border-stone-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600">
@@ -133,17 +121,15 @@ export default function CartDrawer({
                 </div>
               </div>
 
-              {/* Middle Section: Items list */}
               <div className="flex-grow overflow-y-auto px-6 py-4 space-y-4">
                 {cartItems.length === 0 ? (
-                  /* Empty state view */
                   <div className="h-full flex flex-col items-center justify-center text-center px-4">
                     <div className="w-16 h-16 rounded-full bg-orange-50 border border-orange-100 flex items-center justify-center text-orange-300 mb-4 animate-pulse">
                       <ShoppingCart className="w-8 h-8" />
                     </div>
                     <h3 className="font-display text-lg font-black text-slate-800 mb-1">Your Basket is Empty</h3>
                     <p className="text-xs text-stone-400 leading-relaxed max-w-xs">
-                      It looks like you haven’t added any delicacies to your basket yet. Go back and select your favorites!
+                      It looks like you haven't added any delicacies to your basket yet. Go back and select your favorites!
                     </p>
                     <button
                       onClick={onClose}
@@ -153,14 +139,8 @@ export default function CartDrawer({
                     </button>
                   </div>
                 ) : (
-                  /* Scrolling list of items */
                   cartItems.map((item) => {
-                    // Recalculate price of single item
-                    let itemUnitPrice = item.product.price;
-                    if (item.selectedOption) {
-                      itemUnitPrice += item.selectedOption.price;
-                    }
-                    itemUnitPrice += item.selectedToppings.length * 50;
+                    const itemUnitPrice = calculateItemPrice(item);
 
                     return (
                       <motion.div
@@ -171,7 +151,6 @@ export default function CartDrawer({
                         exit={{ opacity: 0, scale: 0.95 }}
                         className="flex gap-4 p-4 border border-orange-100 rounded-2xl bg-orange-50/20 hover:bg-orange-50/50 transition-all"
                       >
-                        {/* Mini image */}
                         <img
                           src={item.product.image}
                           alt={item.product.name}
@@ -179,21 +158,19 @@ export default function CartDrawer({
                           referrerPolicy="no-referrer"
                         />
 
-                        {/* Item metadata columns */}
                         <div className="flex-grow min-w-0">
                           <h4 className="font-display text-sm font-extrabold text-slate-900 truncate leading-tight">
                             {item.product.name}
                           </h4>
-                          
-                          {/* Selected Custom Options badges */}
+
                           <div className="flex flex-wrap gap-1 mt-1.5 mb-2.5">
                             {item.selectedOption && (
                               <span className="px-2 py-0.5 bg-orange-100 text-orange-800 text-[9px] font-mono font-bold rounded">
                                 {item.selectedOption.name}
                               </span>
                             )}
-                            <span className={`px-2 py-0.5 text-[9px] font-mono font-medium rounded ${item.spicyLevel === 'Mild' ? 'bg-green-100 text-green-700' : item.spicyLevel === 'Medium' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
-                              🔥 {item.spicyLevel || 'Medium'}
+                            <span className={`px-2 py-0.5 text-[9px] font-mono font-medium rounded ${getSpicyLevelColor(item.spicyLevel || 'Medium')}`}>
+                              {(item.spicyLevel || 'Medium') as SpicyLevel}
                             </span>
                             {item.selectedToppings.map((top) => (
                               <span key={top} className="px-2 py-0.5 bg-stone-200 text-stone-600 text-[9px] font-mono rounded">
@@ -207,10 +184,9 @@ export default function CartDrawer({
                             )}
                           </div>
 
-                          {/* Price & Incrementor panel */}
                           <div className="flex items-center justify-between gap-2">
                             <span className="font-mono text-sm font-black text-slate-900">
-                              ₹{itemUnitPrice * item.quantity}
+                              {formatPrice(itemUnitPrice * item.quantity)}
                             </span>
 
                             <div className="flex items-center gap-1.5">
@@ -249,13 +225,10 @@ export default function CartDrawer({
                 )}
               </div>
 
-              {/* Bottom billing details panel */}
               {cartItems.length > 0 && (
                 <div className="p-6 border-t border-orange-100 bg-orange-50/20 space-y-4">
-                  
-                  {/* Progressive Free Shipping Banner */}
                   <div className="bg-white border border-orange-100 p-3 rounded-2xl shadow-xs">
-                    {subtotal > 500 ? (
+                    {subtotal > FREE_DELIVERY_THRESHOLD ? (
                       <div className="flex items-center gap-2 text-xs text-green-600 font-semibold leading-tight">
                         <Sparkles className="w-4.5 h-4.5 text-amber-500 animate-bounce" />
                         <span>Congratulations! You qualified for Free Shipping!</span>
@@ -264,19 +237,18 @@ export default function CartDrawer({
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between text-xs text-stone-500 font-medium">
                           <span>Free Delivery Progress</span>
-                          <span className="font-mono text-stone-900 font-bold">Add ₹{500 - subtotal} more</span>
+                          <span className="font-mono text-stone-900 font-bold">Add {formatPrice(FREE_DELIVERY_THRESHOLD - subtotal)} more</span>
                         </div>
                         <div className="w-full h-2 bg-stone-100 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-gradient-to-r from-orange-400 to-orange-500 transition-all duration-500"
-                            style={{ width: `${Math.min(100, (subtotal / 500) * 100)}%` }}
+                            style={{ width: `${Math.min(100, (subtotal / FREE_DELIVERY_THRESHOLD) * 100)}%` }}
                           />
                         </div>
                       </div>
                     )}
                   </div>
 
-                  {/* Promo Input verification */}
                   <div className="space-y-1.5">
                     <div className="flex gap-2">
                       <div className="relative flex-grow">
@@ -320,7 +292,6 @@ export default function CartDrawer({
                     )}
                   </div>
 
-                  {/* Dynamic delivery address editor */}
                   <div className="border-t border-stone-100 pt-3">
                     <div className="flex items-start justify-between gap-4 mb-1.5">
                       <div className="flex items-start gap-1.5">
@@ -373,35 +344,33 @@ export default function CartDrawer({
                     )}
                   </div>
 
-                  {/* Pricing check summary list */}
                   <div className="border-t border-stone-100 pt-3 text-xs space-y-2 text-stone-500 font-medium">
                     <div className="flex justify-between">
                       <span>Dish Subtotal</span>
-                      <span className="font-mono text-stone-900">₹{subtotal}</span>
+                      <span className="font-mono text-stone-900">{formatPrice(subtotal)}</span>
                     </div>
                     {discountAmount > 0 && (
                       <div className="flex justify-between text-green-600">
                         <span>Voucher Discount</span>
-                        <span className="font-mono">-₹{discountAmount}</span>
+                        <span className="font-mono">-{formatPrice(discountAmount)}</span>
                       </div>
                     )}
                     <div className="flex justify-between">
                       <span>GST (5%)</span>
-                      <span className="font-mono text-stone-900">₹{gstTax}</span>
+                      <span className="font-mono text-stone-900">{formatPrice(gstTax)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Delivery Service Fee</span>
                       <span className="font-mono text-stone-900">
-                        {deliveryFee === 0 ? <span className="text-green-600 font-semibold uppercase">Free</span> : `₹${deliveryFee}`}
+                        {deliveryFee === 0 ? <span className="text-green-600 font-semibold uppercase">Free</span> : formatPrice(deliveryFee)}
                       </span>
                     </div>
                     <div className="flex justify-between border-t border-stone-200/80 pt-3.5 text-sm font-extrabold text-stone-900">
                       <span>Grand Total</span>
-                      <span className="font-mono text-lg font-black text-slate-950">₹{grandTotal}</span>
+                      <span className="font-mono text-lg font-black text-slate-950">{formatPrice(grandTotal)}</span>
                     </div>
                   </div>
 
-                  {/* Checkout Place Order CTA */}
                   <button
                     id="checkout-btn"
                     onClick={handleCheckoutTrigger}
@@ -409,12 +378,10 @@ export default function CartDrawer({
                   >
                     <span>Place Order & Pay</span>
                     <span className="opacity-40">|</span>
-                    <span className="font-mono text-base font-extrabold">₹{grandTotal}</span>
+                    <span className="font-mono text-base font-extrabold">{formatPrice(grandTotal)}</span>
                   </button>
-
                 </div>
               )}
-
             </motion.div>
           </div>
         </div>

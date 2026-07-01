@@ -1,18 +1,7 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 export interface ProductOption {
   id: string;
   name: string;
   price: number;
-}
-
-export interface Customizations {
-  spicyLevel?: 'Mild' | 'Medium' | 'Hot' | 'Extra Hot';
-  extraToppings?: string[];
-  selectionOption?: string; // e.g. "Thin Crust", "Cheese Burst", "Normal"
 }
 
 export interface Review {
@@ -30,29 +19,31 @@ export interface Product {
   price: number;
   rating: number;
   reviewCount: number;
-  tag: string; // e.g. "Best Seller", "Chef Special"
+  tag: string;
   category: string;
   description: string;
   calories: number;
   prepTimeMin: number;
   ingredients: string[];
   options?: {
-    selectionName: string; // e.g. "Crust Option" or "Size"
+    selectionName: string;
     selections: ProductOption[];
   };
-  toppings?: string[]; // available toppings to add
+  toppings?: string[];
   reviews: Review[];
 }
 
 export interface CartItem {
-  cartId: string; // unique cart entry ID (id + selections hash)
+  cartId: string;
   product: Product;
   quantity: number;
-  selectedOption?: ProductOption; // chosen selection option
-  selectedToppings: string[]; // chosen extra toppings
-  spicyLevel?: 'Mild' | 'Medium' | 'Hot' | 'Extra Hot';
+  selectedOption?: ProductOption;
+  selectedToppings: string[];
+  spicyLevel?: SpicyLevel;
   notes?: string;
 }
+
+export type SpicyLevel = 'Mild' | 'Medium' | 'Hot' | 'Extra Hot';
 
 export type OrderStep = 'processing' | 'preparing' | 'delivery' | 'arrived';
 

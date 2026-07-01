@@ -1,31 +1,20 @@
 import React from 'react';
-import { Search, ShoppingBag, Award, Flame, Star, Coffee } from 'lucide-react';
+import { Search, ShoppingBag, Award, Flame, Star } from 'lucide-react';
 import { motion } from 'motion/react';
-import { CATEGORIES } from '../data/products';
+import { CATEGORIES, Category } from '../../data';
+import { getCategoryEmoji } from '../../utils/helpers';
 
 interface HeaderProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  selectedCategory: string;
-  setSelectedCategory: (category: string) => void;
+  selectedCategory: Category;
+  setSelectedCategory: (category: Category) => void;
   cartCount: number;
   cartTotal: number;
   onCartClick: () => void;
 }
 
-const getCategoryEmoji = (category: string) => {
-  switch (category) {
-    case 'All': return '🍽️';
-    case 'Pizzas': return '🍕';
-    case 'Chinese': return '🥢';
-    case 'Appetizers': return '🥟';
-    case 'Street Food': return '🍿';
-    case 'Premium Paneer': return '🧀';
-    default: return '🍔';
-  }
-};
-
-export default function Header({
+export function Header({
   searchQuery,
   setSearchQuery,
   selectedCategory,
@@ -36,15 +25,11 @@ export default function Header({
 }: HeaderProps) {
   return (
     <header className="relative w-full overflow-hidden bg-orange-50/50 text-slate-800">
-      {/* Decorative Warm Gradients */}
       <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_20%_20%,rgba(249,115,22,0.1),transparent_50%)] pointer-events-none" />
       <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/5 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Sticky top glass navbar with Vibrant style */}
       <nav className="sticky top-0 z-40 w-full border-b border-orange-100 bg-white/80 backdrop-blur-md px-4 sm:px-6 py-4 transition-all">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          
-          {/* Brand Logo - Zesty Style */}
           <div className="flex items-center gap-2.5 select-none">
             <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center text-white font-black text-2xl shadow-lg rotate-3">
               F
@@ -59,7 +44,6 @@ export default function Header({
             </div>
           </div>
 
-          {/* Quick Stats Banner (Aesthetic, updated with vibrant theme) */}
           <div className="hidden md:flex items-center gap-6 text-xs text-slate-500 font-bold">
             <div className="flex items-center gap-1.5 bg-orange-100/50 px-3 py-1.5 rounded-full">
               <Award className="w-4 h-4 text-orange-500" />
@@ -75,7 +59,6 @@ export default function Header({
             </div>
           </div>
 
-          {/* Cart Icon trigger - Zesty Style */}
           <button
             id="cart-trigger-btn"
             onClick={onCartClick}
@@ -94,16 +77,11 @@ export default function Header({
               <span className="text-xs font-bold font-mono">₹{cartTotal}</span>
             </div>
           </button>
-
         </div>
       </nav>
 
-      {/* High-Energy Vibrant Hero Display Section */}
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center text-left">
-        
-        {/* Left Side: Dynamic Text & Headlines */}
         <div className="lg:col-span-7 flex flex-col justify-center">
-          {/* Animated badge tag */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -114,7 +92,6 @@ export default function Header({
             <span>50% OFF FIRST ORDER</span>
           </motion.div>
 
-          {/* Bold, heavy, high-contrast headline */}
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -126,7 +103,6 @@ export default function Header({
             <span className="text-orange-500">DEVOUR IT.</span>
           </motion.h1>
 
-          {/* Subtitle */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -158,7 +134,6 @@ export default function Header({
           </div>
         </div>
 
-        {/* Right Side: Search Panel & Abstract Design Element */}
         <div className="lg:col-span-5 flex flex-col gap-6">
           <div className="bg-white rounded-[2.5rem] p-8 shadow-premium border border-orange-100 relative overflow-hidden flex flex-col justify-between min-h-[250px]">
             <div className="relative z-10">
@@ -171,7 +146,6 @@ export default function Header({
               </p>
             </div>
 
-            {/* In-Card Search box input */}
             <div className="relative z-10 mt-6">
               <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
                 <Search className="w-5 h-5" />
@@ -194,15 +168,12 @@ export default function Header({
               )}
             </div>
 
-            {/* Abstract decorative circles in the card */}
             <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-orange-500/10 rounded-full pointer-events-none"></div>
             <div className="absolute right-4 top-4 w-12 h-12 border-4 border-orange-500/10 rounded-full pointer-events-none"></div>
           </div>
         </div>
-
       </div>
 
-      {/* Filter Categories Row - Styled as white pills with borders, with emojis */}
       <div className="w-full bg-white border-t border-orange-100 py-6 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-start sm:justify-center overflow-x-auto gap-3 pb-2 sm:pb-0 scrollbar-none">
