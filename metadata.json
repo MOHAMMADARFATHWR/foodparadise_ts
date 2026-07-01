@@ -1,0 +1,8 @@
+{
+  "name": "Food Paradise",
+  "description": "A premium, fully interactive gourmet food shop and culinary boutique featuring real-time checkout simulation, dynamic filtering, and detailed product customizers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
